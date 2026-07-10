@@ -32,11 +32,11 @@ if st.button("🔍 Analizar y Optimizar CV"):
     else:
         with st.spinner("Analizando con Google Gemini..."):
             try:
-                # CONFIGURACIÓN CORREGIDA:
+                # Inicialización limpia
                 genai.configure(api_key=api_key)
                 
-                # Usamos el modelo generativo actualizado
-                model = genai.GenerativeModel(model_name='gemini-1.5-flash')
+                # Usamos la sintaxis estándar simplificada sin prefijos molestos
+                model = genai.GenerativeModel('gemini-1.5-flash')
                 
                 prompt = f"""
                 Actúa como experto en reclutamiento y sistemas ATS. Analiza mi CV y la oferta de trabajo para optimizarlo sin mentir.
@@ -54,7 +54,6 @@ if st.button("🔍 Analizar y Optimizar CV"):
                 ### 📈 Ajustes sugeridos para tu Experiencia / Habilidades:
                 """
                 
-                # Llamada corregida sin especificar versiones de API conflictivas
                 response = model.generate_content(prompt)
                 
                 st.success("¡Análisis completado!")
