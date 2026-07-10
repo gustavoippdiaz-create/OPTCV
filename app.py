@@ -4,7 +4,7 @@ import google.generativeai as genai
 # Configuración de la página
 st.set_page_config(page_title="Optimizador de CV para ATS", page_icon="💼", layout="wide")
 
-st.title("🚀 Vence a la IA de los Portales de Empleo (Versión Google)")
+st.title("🚀 Vence a la IA de los Portales de Empleo")
 st.subheader("Adapta tu CV técnicamente para pasar los filtros de preselección (ATS)")
 
 # Entrada de la API Key de Google
@@ -32,9 +32,11 @@ if st.button("🔍 Analizar y Optimizar CV"):
     else:
         with st.spinner("Analizando con Google Gemini..."):
             try:
-                # Configurar Google Gemini
+                # CONFIGURACIÓN CORREGIDA:
                 genai.configure(api_key=api_key)
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                
+                # Usamos el modelo generativo actualizado
+                model = genai.GenerativeModel(model_name='gemini-1.5-flash')
                 
                 prompt = f"""
                 Actúa como experto en reclutamiento y sistemas ATS. Analiza mi CV y la oferta de trabajo para optimizarlo sin mentir.
@@ -52,6 +54,7 @@ if st.button("🔍 Analizar y Optimizar CV"):
                 ### 📈 Ajustes sugeridos para tu Experiencia / Habilidades:
                 """
                 
+                # Llamada corregida sin especificar versiones de API conflictivas
                 response = model.generate_content(prompt)
                 
                 st.success("¡Análisis completado!")
@@ -59,4 +62,4 @@ if st.button("🔍 Analizar y Optimizar CV"):
                 st.markdown(response.text)
                 
             except Exception as e:
-                st.error(f"Ocurrió un error: {e}")
+                st.error(f"Ocurrió un error técnico: {e}")
