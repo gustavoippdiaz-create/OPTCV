@@ -1,5 +1,6 @@
 import streamlit as st
-import google.generativeai as genai
+import requests
+import json
 
 # Configuración de la página
 st.set_page_config(page_title="Optimizador de CV para ATS", page_icon="💼", layout="wide")
@@ -30,13 +31,10 @@ if st.button("🔍 Analizar y Optimizar CV"):
     elif not cv_texto or not oferta_texto:
         st.warning("⚠️ Debes rellenar ambos campos.")
     else:
-        with st.spinner("Analizando con Google Gemini..."):
+        with st.spinner("Analizando con Google Gemini mediante conexión directa..."):
             try:
-                # Inicialización limpia
-                genai.configure(api_key=api_key)
-                
-                # Usamos la sintaxis estándar simplificada sin prefijos molestos
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                # Usamos la API estable v1 de Google saltándonos las librerías antiguas de Streamlit
+                url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
                 
                 prompt = f"""
                 Actúa como experto en reclutamiento y sistemas ATS. Analiza mi CV y la oferta de trabajo para optimizarlo sin mentir.
@@ -54,11 +52,28 @@ if st.button("🔍 Analizar y Optimizar CV"):
                 ### 📈 Ajustes sugeridos para tu Experiencia / Habilidades:
                 """
                 
-                response = model.generate_content(prompt)
+                payload = {
+                    "contents": [
+                        {
+                            "parts": [
+                                {"text": prompt}
+                            ]
+                        }
+                    ]
+                }
                 
-                st.success("¡Análisis completado!")
-                st.markdown("---")
-                st.markdown(response.text)
+                headers = {'Content-Type': 'application/json'}
+                
+                response = requests.post(url, headers=headers, data=json.dumps(payload))
+                
+                if response.status_code == 200:
+                    response_data = response.json()
+                    texto_ia = response_data['candidates'][0]['content']['parts'][0]['text']
+                    st.success("¡Análisis completado!")
+                    st.markdown("---")
+                    st.markdown(texto_ia)
+                else:
+                    st.error(f"Error del servidor de Google (Código {response.status_code}): {response.text}")
                 
             except Exception as e:
                 st.error(f"Ocurrió un error técnico: {e}")
