@@ -33,8 +33,8 @@ if st.button("🔍 Analizar y Optimizar CV"):
     else:
         with st.spinner("Analizando con Google Gemini mediante conexión directa..."):
             try:
-                # Usamos la API estable v1 de Google saltándonos las librerías antiguas de Streamlit
-                url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+                # URL CORRECTA Y ACTUALIZADA CON V1BETA
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
                 
                 prompt = f"""
                 Actúa como experto en reclutamiento y sistemas ATS. Analiza mi CV y la oferta de trabajo para optimizarlo sin mentir.
