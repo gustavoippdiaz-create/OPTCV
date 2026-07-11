@@ -1,68 +1,95 @@
 import streamlit as st
-import requests
-import json
+import openai
 
 # Configuración de la página
 st.set_page_config(page_title="Optimizador de CV para ATS", page_icon="💼", layout="wide")
 
+# Título de la aplicación
 st.title("🚀 Vence a la IA de los Portales de Empleo")
 st.subheader("Adapta tu CV técnicamente para pasar los filtros de preselección (ATS)")
 
-# Entrada de la API Key de Google
+# Entrada de la API Key de OpenAI de forma segura en la barra lateral
 with st.sidebar:
     st.header("⚙️ Configuración")
-    api_key = st.text_input("Introduce tu Google Gemini API Key:", type="password")
-    st.markdown("[👉 Consigue tu API Key GRATIS aquí](https://aistudio.google.com/)")
+    api_key = st.text_input("Introduce tu OpenAI API Key:", type="password")
+    st.markdown("[¿Cómo obtener una API Key?](https://platform.openai.com/)")
     st.write("---")
+    st.markdown("**Consejo profesional:** Mantén tus CVs de Redes y Mecánica separados en block de notas para usarlos aquí según la oferta.")
 
+# Crear dos columnas para la entrada de datos
 col1, col2 = st.columns(2)
 
 with col1:
     st.markdown("### 📝 Tu CV Base (Redes o Mecánica)")
-    cv_texto = st.text_area("Pega aquí el texto actual de tu currículum:", height=300)
+    cv_texto = st.text_area(
+        "Pega aquí el texto actual de tu currículum:", 
+        height=300, 
+        placeholder="Ej: Técnico en Administración de Redes... Experiencia en..."
+    )
 
 with col2:
     st.markdown("### 🎯 La Oferta de Trabajo")
-    oferta_texto = st.text_area("Pega aquí la descripción del empleo:", height=300)
+    oferta_texto = st.text_area(
+        "Pega aquí la descripción del empleo del portal web (LinkedIn, Indeed, etc.):", 
+        height=300, 
+        placeholder="Ej: Buscamos técnico con conocimientos en enrutamiento OSPF, mantenimiento de motores..."
+    )
 
+# Botón para procesar
 if st.button("🔍 Analizar y Optimizar CV"):
     if not api_key:
-        st.error("⚠️ Por favor, introduce tu API Key de Google en la barra lateral.")
+        st.error("⚠️ Por favor, introduce tu API Key de OpenAI en la barra lateral izquierda.")
     elif not cv_texto or not oferta_texto:
-        st.warning("⚠️ Debes rellenar ambos campos.")
+        st.warning("⚠️ Debes rellenar ambos campos (Tu CV y la Oferta de Trabajo) para poder analizar.")
     else:
-        with st.spinner("Analizando con Google Gemini..."):
+        with st.spinner("La IA está analizando los algoritmos de filtrado... Por favor espera."):
             try:
-                # Estructura de URL oficial y robusta para solicitudes directas
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+                # Configurar el cliente de OpenAI
+                client = openai.OpenAI(api_key=api_key)
                 
-                prompt_completo = f"Actúa como experto en reclutamiento y sistemas ATS. Analiza mi CV y la oferta de trabajo para optimizarlo sin mentir.\n\n=== MI CV ===\n{cv_texto}\n\n=== OFERTA ===\n{oferta_texto}\n\nDevuélveme el resultado estructurado en Markdown con:\n## 📊 Diagnóstico de Compatibilidad: [X]%\n### ❌ Palabras clave que te faltan:\n### 🛠️ Tu Perfil Profesional Optimizado:\n### 📈 Ajustes sugeridos para tu Experiencia / Habilidades:"
+                instruccion_sistema = (
+                    "Eres un reclutador experto y especialista en sistemas ATS. Tu trabajo es desglosar "
+                    "las ofertas de empleo, extraer las palabras clave exactas (hard skills y soft skills) "
+                    "y modificar el CV del usuario para que haga 'match' perfecto con el algoritmo, sin inventar falsedades."
+                )
                 
-                # Payload con la estructura exacta y simplificada que exige la API de Google
-                payload = {
-                    "contents": [{
-                        "parts": [{
-                            "text": prompt_completo
-                        }]
-                    }]
-                }
+                prompt_usuario = f"""
+                Analiza mi CV y la oferta de trabajo.
                 
-                headers = {'Content-Type': 'application/json'}
+                === MI CV ===
+                {cv_texto}
                 
-                response = requests.post(url, headers=headers, json=payload)
+                === OFERTA ===
+                {oferta_texto}
                 
-                if response.status_code == 200:
-                    response_data = response.json()
-                    # Validación de seguridad por si la respuesta viene vacía
-                    if 'candidates' in response_data and response_data['candidates']:
-                        texto_ia = response_data['candidates'][0]['content']['parts'][0]['text']
-                        st.success("¡Análisis completado!")
-                        st.markdown("---")
-                        st.markdown(texto_ia)
-                    else:
-                        st.error("El modelo no devolvió texto. Revisa que tu API Key sea válida.")
-                else:
-                    st.error(f"Error del servidor de Google (Código {response.status_code}): {response.text}")
+                Devuélveme el resultado estructurado estrictamente con este formato Markdown:
+                ## 📊 Diagnóstico de Compatibilidad: [X]%
+                
+                ### ❌ Palabras clave que te faltan (¡Cruciales para la IA!):
+                - [Palabra clave 1]
+                - [Palabra clave 2]
+                
+                ### 🛠️ Tu Perfil Profesional Optimizado:
+                [Escribe un extracto/perfil adaptado usando los términos de la oferta]
+                
+                ### 📈 Ajustes sugeridos para tu Experiencia / Habilidades:
+                [Dime cómo reescribir frases de mi experiencia para que coincidan con lo que piden]
+                """
+                
+                # Llamada a la API
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini", # Usamos mini porque es ultra rápido y muy económico
+                    messages=[
+                        {"role": "system", "content": instruccion_sistema},
+                        {"role": "user", "content": prompt_usuario}
+                    ],
+                    temperature=0.2
+                )
+                
+                # Mostrar resultados
+                st.success("¡Análisis completado con éxito!")
+                st.markdown("---")
+                st.markdown(response.choices[0].message.content)
                 
             except Exception as e:
-                st.error(f"Ocurrió un error técnico: {e}")
+                st.error(f"Ocurrió un error con la API: {e}")
