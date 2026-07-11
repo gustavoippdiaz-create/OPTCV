@@ -31,47 +31,36 @@ if st.button("🔍 Analizar y Optimizar CV"):
     elif not cv_texto or not oferta_texto:
         st.warning("⚠️ Debes rellenar ambos campos.")
     else:
-        with st.spinner("Analizando con Google Gemini mediante conexión directa..."):
+        with st.spinner("Analizando con Google Gemini..."):
             try:
-                # URL CORRECTA Y ACTUALIZADA CON V1BETA
+                # Estructura de URL oficial y robusta para solicitudes directas
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
                 
-                prompt = f"""
-                Actúa como experto en reclutamiento y sistemas ATS. Analiza mi CV y la oferta de trabajo para optimizarlo sin mentir.
+                prompt_completo = f"Actúa como experto en reclutamiento y sistemas ATS. Analiza mi CV y la oferta de trabajo para optimizarlo sin mentir.\n\n=== MI CV ===\n{cv_texto}\n\n=== OFERTA ===\n{oferta_texto}\n\nDevuélveme el resultado estructurado en Markdown con:\n## 📊 Diagnóstico de Compatibilidad: [X]%\n### ❌ Palabras clave que te faltan:\n### 🛠️ Tu Perfil Profesional Optimizado:\n### 📈 Ajustes sugeridos para tu Experiencia / Habilidades:"
                 
-                === MI CV ===
-                {cv_texto}
-                
-                === OFERTA ===
-                {oferta_texto}
-                
-                Devuélveme el resultado estructurado en Markdown con:
-                ## 📊 Diagnóstico de Compatibilidad: [X]%
-                ### ❌ Palabras clave que te faltan:
-                ### 🛠️ Tu Perfil Profesional Optimizado:
-                ### 📈 Ajustes sugeridos para tu Experiencia / Habilidades:
-                """
-                
+                # Payload con la estructura exacta y simplificada que exige la API de Google
                 payload = {
-                    "contents": [
-                        {
-                            "parts": [
-                                {"text": prompt}
-                            ]
-                        }
-                    ]
+                    "contents": [{
+                        "parts": [{
+                            "text": prompt_completo
+                        }]
+                    }]
                 }
                 
                 headers = {'Content-Type': 'application/json'}
                 
-                response = requests.post(url, headers=headers, data=json.dumps(payload))
+                response = requests.post(url, headers=headers, json=payload)
                 
                 if response.status_code == 200:
                     response_data = response.json()
-                    texto_ia = response_data['candidates'][0]['content']['parts'][0]['text']
-                    st.success("¡Análisis completado!")
-                    st.markdown("---")
-                    st.markdown(texto_ia)
+                    # Validación de seguridad por si la respuesta viene vacía
+                    if 'candidates' in response_data and response_data['candidates']:
+                        texto_ia = response_data['candidates'][0]['content']['parts'][0]['text']
+                        st.success("¡Análisis completado!")
+                        st.markdown("---")
+                        st.markdown(texto_ia)
+                    else:
+                        st.error("El modelo no devolvió texto. Revisa que tu API Key sea válida.")
                 else:
                     st.error(f"Error del servidor de Google (Código {response.status_code}): {response.text}")
                 
